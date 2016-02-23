@@ -33,8 +33,8 @@ YehaNoha.prototype = {
 		this.col_scale = this.options.col_size/84;
 
 		this.env = new YehaNoha.env();
-/*
-		this.hole = new YehaNoha.hole();*/
+
+		this.hole = new YehaNoha.hole();
 
 		this.join_player();
 		this.join_player();
@@ -52,6 +52,7 @@ YehaNoha.prototype = {
 		this.players.each(function(player){
 			player.draw(self.ctx);
 		});
+		this.hole.draw(this.ctx);
 	},
 	update: function(){
 		this.draw();
@@ -165,10 +166,11 @@ YehaNoha.hole = function(){
 		x: 9, y: 166, width: 51, height: 23
 	};
 	this.col = [0, 0];
-	console.log(YN._instance.assets.env[0]);
 };
 YehaNoha.hole.prototype = {
 	draw: function(ctx){
+		var instance = YN._instance;
+		sprite_part(instance.assets.env[0], ctx, this.spr, { x: 0, y: 0 }, instance.options.col_size, instance.col_scale);
 	}
 };
 
@@ -231,15 +233,17 @@ function get_assets(assets, callback){
 	for(var prop in assets){
 		_assets[prop] = [];
 		var count = 1;
-
-		var d = assets[prop].match(regexp_count);
-		if( d != null ) {
-			count = parseInt(d[1]);
-			for(var i=0; i < count; i++){
-				_assets[prop].push(assets[prop].replace(regexp_count, i).replace('{path}', YN._path));
+		if( regexp_count.test(assets[prop]) ){
+			var d = assets[prop].match(regexp_count);
+			if( d != null ) {
+				count = parseInt(d[1]);
+				for(var i=0; i < count; i++){
+					_assets[prop].push(assets[prop].replace(regexp_count, i).replace('{path}', YN._path));
+				}
 			}
+		} else {
+			_assets[prop].push(assets[prop].replace('{path}', YN._path));
 		}
-
 		length += count;
 	}
 
@@ -303,3 +307,8 @@ function timer(func, fps){
 		}
 	})();
 };
+/* sprite part */
+function sprite_part(img, ctx, d, translate, size_box, scale){
+	scale = scale || 1;
+	ctx.drawImage(img, d.x, d.y, d.width, d.height, ~~((size_box-d.width*scale)/2)+translate.x, ~~((size_box-d.height*scale)/2)+translate.y, ~~d.width*scale, ~~d.height*scale);
+}
