@@ -37,8 +37,8 @@ YehaNoha.prototype = {
 		this.obstacles = [];
 		var col = 0;
 
-		['hole', 'skull'].each(function(n){
-			self.obstacles.push(new YehaNoha[n](YN._instance.options.col_size*col, YN._instance.options.col_size*col));
+		['hole', 'skull', 'mexican_cactus', 'cactus', 'many_cactus'].each(function(n){
+			self.obstacles.push(new YehaNoha.obstacle(n, YN._instance.options.col_size*col, YN._instance.options.col_size*col));
 			col++;
 		});
 
@@ -55,11 +55,11 @@ YehaNoha.prototype = {
 		var self = this;
 		this.canvas.width = this.canvas.width;
 		this.env.draw(this.ctx);
-		this.players.each(function(player){
-			player.draw(self.ctx);
-		});
 		this.obstacles.each(function(object){
 			object.draw(self.ctx);
+		});
+		this.players.each(function(player){
+			player.draw(self.ctx);
 		});
 	},
 	update: function(){
@@ -94,7 +94,7 @@ YehaNoha.env.prototype = {
 		for(; i < YN._instance.options.col_x; i++){
 			for(var j=0; j < YN._instance.options.col_y; j++){
 				ctx.fillStyle = 'rgba(0,0,0,'+((i+j)%2==0?.04:.02)+')';
-				ctx.fillRect(col_size*i+~~this.translate.x, col_size*j+~~this.translate.y, col_size, col_size);
+				ctx.fillRect(col_size*i+this.translate.x, col_size*j+this.translate.y, col_size, col_size);
 			}
 		}
 	},
@@ -110,17 +110,24 @@ YehaNoha.env.prototype = {
 				cancelAnimationFrame(reqId);
 				return;
 			}
-			var tension = 6*YN._instance.col_scale;
-			this.translate = {
-				x: Math.random()*tension-tension/2, y: Math.random()*tension-tension/2
+			var tension = 10*YN._instance.col_scale;
+			var translate = {
+				x: Math.round(Math.random()*tension-tension/2), y: Math.round(Math.random()*tension-tension/2)
 			};
-		}}, 10);
+			YN._instance.obstacles.each(function(object){
+				object.translate = translate;
+			});
+			this.translate = translate;
+		}}, 15);
 	},
 	stop_vibrate: function(){
 		this.vibrating = false;
 		this.translate = {
 			x: 0, y: 0
 		};
+		YN._instance.obstacles.each(function(object){
+			object.translate = { x: 0, y: 0 };
+		});
 	}
 };
 /* player */
@@ -169,36 +176,18 @@ YehaNoha.player.prototype = {
 	}
 };
 /* obstacles */
-/* hole */
-YehaNoha.hole = function(x, y){
-	this.spr = {
-		x: 9, y: 166, width: 51, height: 23
-	};
+YehaNoha.obstacle = function(type_name, x, y){
+	this.type_name = type_name;
 	this.translate = {
-		x: x || 0, y: y || 0
+		x: 0, y: 0
 	};
-	this.col = [0, 0];
+	this.posX = x;
+	this.posY = y;
 };
-YehaNoha.hole.prototype = {
+YehaNoha.obstacle.prototype = {
 	draw: function(ctx){
 		var instance = YN._instance;
-		sprite_part(instance.assets.env[0], ctx, this.spr, this.translate, instance.options.col_size, instance.col_scale);
-	}
-};
-/* skull */
-YehaNoha.skull = function(x, y){
-	this.spr = {
-		x: 73, y: 97, width: 59, height: 35
-	};
-	this.translate = {
-		x: x || 0, y: y || 0
-	};
-	this.col = [0, 0];
-};
-YehaNoha.skull.prototype = {
-	draw: function(ctx){
-		var instance = YN._instance;
-		sprite_part(instance.assets.env[0], ctx, this.spr, this.translate, instance.options.col_size, instance.col_scale);
+		sprite_part(instance.assets.env[0], ctx, YN._obstacles[this.type_name], { x: this.posX+this.translate.x, y: this.posY+this.translate.y }, instance.options.col_size, instance.col_scale);
 	}
 };
 
@@ -211,6 +200,32 @@ var YN = {
 		env: '{path}env.png',
 		p1_invok: '{path}player1_invok_spr_{count:5}.png', p2_invok: '{path}player2_invok_spr_{count:5}.png',
 		arrow: '{path}arrow_spr_{count:2}.png'
+	},
+	_obstacles: {
+		hole: {
+			x: 9, y: 166,
+			width: 51, height: 23,
+			dy: 20
+		},
+		skull: {
+			x: 73, y: 97,
+			width: 59, height: 35
+		},
+		mexican_cactus: {
+			x: 2, y: 77,
+			width: 68, height: 61,
+			dx: 3, dy: 4
+		},
+		cactus: {
+			x: 81, y: 157,
+			width: 49, height: 35,
+			dy: 5
+		},
+		many_cactus: {
+			x: 284, y: 20,
+			width: 51, height: 28,
+			dy: 3
+		},
 	},
 
 	_def: { /* default options */
@@ -338,5 +353,5 @@ function timer(func, fps){
 /* sprite part */
 function sprite_part(img, ctx, d, translate, size_box, scale){
 	scale = scale || 1;
-	ctx.drawImage(img, d.x, d.y, d.width, d.height, ~~((size_box-d.width*scale)/2)+translate.x, ~~((size_box-d.height*scale)/2)+translate.y, ~~d.width*scale, ~~d.height*scale);
+	ctx.drawImage(img, d.x, d.y, d.width, d.height, Math.round((size_box-d.width*scale)/2)+translate.x+Math.round((d.dx||0)*scale), Math.round((size_box-d.height*scale)/2)+translate.y+Math.round((d.dy||0)*scale), Math.round(d.width*scale), Math.round(d.height*scale));
 }
