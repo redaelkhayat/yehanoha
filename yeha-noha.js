@@ -34,7 +34,13 @@ YehaNoha.prototype = {
 
 		this.env = new YehaNoha.env();
 
-		this.hole = new YehaNoha.hole();
+		this.obstacles = [];
+		var col = 0;
+
+		['hole', 'skull'].each(function(n){
+			self.obstacles.push(new YehaNoha[n](YN._instance.options.col_size*col, YN._instance.options.col_size*col));
+			col++;
+		});
 
 		this.join_player();
 		this.join_player();
@@ -52,7 +58,9 @@ YehaNoha.prototype = {
 		this.players.each(function(player){
 			player.draw(self.ctx);
 		});
-		this.hole.draw(this.ctx);
+		this.obstacles.each(function(object){
+			object.draw(self.ctx);
+		});
 	},
 	update: function(){
 		this.draw();
@@ -156,21 +164,41 @@ YehaNoha.player.prototype = {
 				this.current_spr = 0;
 				YN._instance.env.stop_vibrate();
 			}
-		}, 5);
+		}, 7);
 
 	}
 };
 /* obstacles */
-YehaNoha.hole = function(){
+/* hole */
+YehaNoha.hole = function(x, y){
 	this.spr = {
 		x: 9, y: 166, width: 51, height: 23
+	};
+	this.translate = {
+		x: x || 0, y: y || 0
 	};
 	this.col = [0, 0];
 };
 YehaNoha.hole.prototype = {
 	draw: function(ctx){
 		var instance = YN._instance;
-		sprite_part(instance.assets.env[0], ctx, this.spr, { x: 0, y: 0 }, instance.options.col_size, instance.col_scale);
+		sprite_part(instance.assets.env[0], ctx, this.spr, this.translate, instance.options.col_size, instance.col_scale);
+	}
+};
+/* skull */
+YehaNoha.skull = function(x, y){
+	this.spr = {
+		x: 73, y: 97, width: 59, height: 35
+	};
+	this.translate = {
+		x: x || 0, y: y || 0
+	};
+	this.col = [0, 0];
+};
+YehaNoha.skull.prototype = {
+	draw: function(ctx){
+		var instance = YN._instance;
+		sprite_part(instance.assets.env[0], ctx, this.spr, this.translate, instance.options.col_size, instance.col_scale);
 	}
 };
 
