@@ -37,8 +37,8 @@ YehaNoha.prototype = {
 		this.obstacles = [];
 		var col = 0;
 
-		['hole', 'skull', 'mexican_cactus', 'cactus', 'many_cactus'].each(function(n){
-			self.obstacles.push(new YehaNoha.obstacle(n, YN._instance.options.col_size*col, YN._instance.options.col_size*col));
+		['hole', 'skull', 'mexican_cactus', 'cactus', 'many_cactus', 'dust', 'monument'].each(function(n){
+			self.obstacles.push(new YehaNoha.obstacle(n, col));
 			col++;
 		});
 
@@ -89,6 +89,8 @@ YehaNoha.env = function(){
 };
 YehaNoha.env.prototype = {
 	draw: function(ctx){
+		return;
+
 		var col_size = YN._instance.options.col_size;
 		var i=0;
 		for(; i < YN._instance.options.col_x; i++){
@@ -135,9 +137,9 @@ YehaNoha.player = function(id, options){
 	this.on_action = false;
 
 	this.id = id;
-	this.options = extend(options, {
+	this.options = extend({
 		position: 'left'
-	});
+	}, options);
 	this.spr_name = '_invok';
 	this.current_spr = 0;
 };
@@ -176,18 +178,22 @@ YehaNoha.player.prototype = {
 	}
 };
 /* obstacles */
-YehaNoha.obstacle = function(type_name, x, y){
+YehaNoha.obstacle = function(type_name, col){
 	this.type_name = type_name;
-	this.translate = {
-		x: 0, y: 0
+	this.sprite = YN._obstacles[this.type_name];
+	this.translate = { x: 0, y: 0 };
+	this.col = col;
+
+	if( undefined != this.sprite.tick ){
+		to(this, {
+			tick: this.sprite.tick
+		}, this.sprite.tick_fps || 60);
 	};
-	this.posX = x;
-	this.posY = y;
 };
 YehaNoha.obstacle.prototype = {
 	draw: function(ctx){
 		var instance = YN._instance;
-		sprite_part(instance.assets.env[0], ctx, YN._obstacles[this.type_name], { x: this.posX+this.translate.x, y: this.posY+this.translate.y }, instance.options.col_size, instance.col_scale);
+		sprite_part(instance.assets.env[0], ctx, this.sprite, { x: this.col*instance.options.col_size+this.translate.x, y: 0*instance.options.col_size+this.translate.y }, instance.options.col_size, instance.col_scale);
 	}
 };
 
@@ -205,7 +211,10 @@ var YN = {
 		hole: {
 			x: 9, y: 166,
 			width: 51, height: 23,
-			dy: 20
+			dy: 10,
+			tick: function(req){
+				
+			}
 		},
 		skull: {
 			x: 73, y: 97,
@@ -225,6 +234,27 @@ var YN = {
 			x: 284, y: 20,
 			width: 51, height: 28,
 			dy: 3
+		},
+		dust: {
+			x: 289, y: 151,
+			width: 54, height: 47,
+			tick: function(){
+				if( this.state == undefined ){
+					this.state = true;
+				}
+				if( ! this.state ){
+					extend(this.sprite, { x: 289, y: 151 });
+				} else {
+					extend(this.sprite, { x: 74, y: 10 });
+				}
+
+				this.state = !this.state;
+			},
+			tick_fps: 5
+		},
+		monument: {
+			x: 291, y: 71,
+			width: 38, height: 63
 		},
 	},
 
@@ -250,9 +280,7 @@ function set(obj, attrs){
 /* obj2 to obj1 -> only if the property doesn't exist */
 function extend(obj1, obj2){
 	for(var prop in obj2){
-		if( obj1[prop] == undefined ){
-			obj1[prop] = obj2[prop];
-		}
+		obj1[prop] = obj2[prop];
 	}
 	return obj1;
 };
