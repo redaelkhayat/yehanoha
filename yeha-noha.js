@@ -165,13 +165,12 @@ YehaNoha.player.prototype = {
 		var self = this;
 		this.spr_name = '_invok';
 
-		YN._instance.env.vibrate();
 
 		to(this, {
 			current_spr: 5,
 			end: function(){
 				this.current_spr = 0;
-				YN._instance.env.stop_vibrate();
+				YN._instance.env.vibrate();
 			}
 		}, 7);
 
